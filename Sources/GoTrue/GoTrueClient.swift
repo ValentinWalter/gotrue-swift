@@ -160,6 +160,20 @@ public final class GoTrueClient {
       )
     )
   }
+    
+    @discardableResult
+    public func signIn(credential: OpenIDConnectCredentials) async throws -> Session {
+        let session = try await Env.client.send(
+            Paths.token.post(
+                grantType: .idToken,
+                .openIDConnectCredentials(credential)
+            )).value
+        if session.user.confirmedAt != nil {
+            try await Env.sessionManager.update(session)
+            authEventChangeContinuation.yield(.signedIn)
+        }
+        return session
+    }
 
   private func _signIn(request: Request<Session>) async throws -> Session {
     await Env.sessionManager.remove()
